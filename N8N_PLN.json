@@ -1,0 +1,235 @@
+{
+  "name": "N8N_PLN",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recomenda-filmes",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        384,
+        144
+      ],
+      "id": "1caf7379-381a-4830-89e4-c788461c5c1b",
+      "name": "Webhook",
+      "webhookId": "bfcfa58d-8694-4a48-93d3-c40e65ddf3cc"
+    },
+    {
+      "parameters": {
+        "url": "https://api.themoviedb.org/3/search/movie",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "816fb2b0c580e7ac4e3338d0f822fc48"
+            },
+            {
+              "name": "query",
+              "value": "=={{$json.genero}}"
+            },
+            {
+              "name": "language",
+              "value": "=={{$json.lingua}}"
+            },
+            {
+              "name": "year",
+              "value": "=={{$json.ano}}"
+            },
+            {
+              "name": "year",
+              "value": "=={{$json.ano}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        816,
+        144
+      ],
+      "id": "2c97dfbe-8bd1-4fd0-b2f6-71e4964a9ff3",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  return {\n    json: {\n      filmes: item.json.results.map(f => ({\n        titulo: f.title,\n        descricao: f.overview,\n        nota: f.vote_average,\n        poster: \"https://image.tmdb.org/t/p/w500\" + f.poster_path\n      }))\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        144
+      ],
+      "id": "e45298c0-5207-4fef-8c90-3526498d8f10",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200,
+          "responseKey": "{{ $json }}"
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        352,
+        0
+      ],
+      "id": "fa9b8f2e-408a-486d-ac91-f26338fd123f",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você é um agente que recebe o nome de um filme e retorna:\n- Uma breve sinopse\n- Gênero\n- Nota (rating)\n- Uma recomendação parecida\n\nSe o usuário enviar apenas texto solto, tente entender como nome de filme.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e37fe65c-bf49-4382-8314-38a5088f46bc",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -79.5,
+        208
+      ],
+      "id": "58abf796-cf60-45a3-9ef9-17ab69b7389f",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "LittVb1QpKt3g5lt",
+          "name": "Groq account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=={{ $json.body.session_id || 'user-default' }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        176
+      ],
+      "id": "91181699-fc31-41a8-a029-7e65fe576f39",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {
+    "Respond to Webhook": [
+      {
+        "json": {
+          "name": "First item",
+          "code": 1
+        }
+      },
+      {
+        "json": {
+          "name": "Second item",
+          "code": 2
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "59334de1-2d96-4173-93d1-029f0fcbae64",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "889e4ac0bcc3f56ee1618a931c950ea2f8e1d38bceb86907c24a8fcc66bbfb4e"
+  },
+  "id": "nrdRN2fvFdlHxKPT",
+  "tags": []
+}
