@@ -1,1 +1,1 @@
-[Assista ao vídeo no YouTube](https://www.youtube.com/watch?v=65oEGfQrYxz)
+[Assista ao vídeo no YouTube](https://youtu.be/J9JaQEL-ht0)
